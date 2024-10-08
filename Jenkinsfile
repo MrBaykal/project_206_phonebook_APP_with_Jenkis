@@ -37,5 +37,76 @@ pipeline {
                     '''
                 }
             }                    
+            stage('Build App Docker Images for RESULT') {
+                steps {
+                    echo 'Building App Images for result_server'
+                    sh '''
+                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    cd image_for_result_server
+                    docker build -t clarusway-repo/phonebook-app:result .
+                    docker tag clarusway-repo/phonebook-app:result ${ECR_REGISTRY}/${APP_REPO_NAME}:result
+                    docker push ${ECR_REGISTRY}/${APP_REPO_NAME}:result
+                    docker image ls
+                    '''
+                }
+            }
+
+            stage('Installing eksctl, kubectl and creating EKS Cluster and deploying Phonebook Application') {
+                steps {
+                    echo 'Installing eksctl, kubectl and creating EKS Cluster and deploying Phonebook Application'
+                    sh '''
+                    curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+                    eksctl version
+
+                    curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.26.4/2023-05-11/bin/linux/amd64/kubectl
+                    chmod +x ./kubectl
+                    kubectl version --short --client
+
+                    eksctl create cluster -f cluster/cluster.yaml
+                    
+                    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.0/deploy/static/provider/cloud/deploy.yaml
+                    
+                    sleep 200
+
+                    kubectl apply -f .                 
+
+                    '''
+                }
+            }
+
+    //         stage('Deploy to Production Environment'){
+    //             steps{
+    //                 timeout(time:5, unit:'DAYS'){
+    //                     input message:'Approve for Destruction All Resources?'
+    //                     }
+    //                 }
+    //             }
+
+    // }
+
+    // post {
+    //     always {
+    //         echo 'Deleting all local images'
+    //         sh 'docker image prune -af'
+
+    //         echo 'Delete the Image Repository on ECR'
+    //         sh '''
+    //             aws ecr delete-repository \
+    //               --repository-name ${APP_REPO_NAME} \
+    //               --region ${AWS_REGION}\
+    //               --force
+    //             '''
+
+    //         echo 'Delete the Application and yaml files'            
+    //         sh '''
+    //         kubectl delete -f .
+    //         '''
+
+    //         echo 'Tear down the EKS Cluster'
+    //         sh '''
+    //         eksctl delete cluster -f cluster/cluster.yaml
+    //         '''
+    //     }
+
         }
 }
