@@ -9,7 +9,7 @@ pipeline {
         PATH="$PATH:/tmp:/var/lib/jenkins/workspace/phonebook-jenkins"
         }
     
-        // stages {
+        stages {
         //     stage('Create ECR Repo') {
         //         steps {
         //             echo "Creating ECR Repo for ${APP_NAME}-app"
@@ -109,4 +109,5 @@ pipeline {
         }
 
         }
-}
+
+        }
