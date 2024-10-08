@@ -23,5 +23,19 @@ pipeline {
                     '''
                         }
                     }
+
+            stage('Build App Docker Images for WEB') {
+                steps {
+                    echo 'Building App Images for web_server'
+                    sh '''
+                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    cd image_for_web_server
+                    docker build -t clarusway-repo/phonebook-app:web .
+                    docker tag clarusway-repo/phonebook-app:web ${ECR_REGISTRY}/${APP_REPO_NAME}:web
+                    docker push ${ECR_REGISTRY}/${APP_REPO_NAME}:web
+                    docker image ls
+                    '''
+                }
+            }                    
         }
 }
